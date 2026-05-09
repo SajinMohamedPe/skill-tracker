@@ -316,9 +316,11 @@ def _remove_deployed_files(skill, root: Path) -> None:
         # Remove skill directory
         for f in skill.files:
             dest = deploy._dest_path(f, target)
-            if dest.exists():
+            try:
                 dest.unlink()
                 out.print(f"  [green]✓[/green] Removed {dest.relative_to(target)}")
+            except FileNotFoundError:
+                pass
             # Remove parent dir if empty
             try:
                 dest.parent.rmdir()
