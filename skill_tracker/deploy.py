@@ -24,12 +24,34 @@ def deploy(skill: Skill, upstream_dir: Path, target: Path) -> list[tuple[str, Pa
         deployed.append((skill_file.remote, dest))
     return deployed
 
+# Loads and validates settings.json, returning a safe dict. Returns {} on missing/malformed file.
+def _load_settings(settings_path: Path) -> dict:
+    if not settings_path.exists():
+        return {}
+    try:
+        data = json.loads(settings_path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    hooks = data.get("hooks", {})
+    if not isinstance(hooks, dict):
+        data["hooks"] = {}
+    else:
+        for event, matchers in list(hooks.items()):
+            if not isinstance(matchers, list):
+                hooks[event] = []
+            else:
+                hooks[event] = [m for m in matchers if isinstance(m, dict)]
+    return data
+
+
 # Merges skill's hook declarations into target/.claude/settings.json. Returns list of commands added.
 def wire_hooks(skill: Skill, target: Path) -> list[str]:
     if not skill.hooks:
         return []
     settings_path = target / ".claude" / "settings.json"
-    settings = json.loads(settings_path.read_text()) if settings_path.exists() else {}
+    settings = _load_settings(settings_path)
     settings.setdefault("hooks", {})
     added = []
     for h in skill.hooks:

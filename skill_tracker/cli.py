@@ -325,7 +325,7 @@ def _remove_deployed_files(skill, root: Path) -> None:
         settings_path = claude_dir / "settings.json"
         if settings_path.exists() and script_names:
             try:
-                settings = _json.loads(settings_path.read_text())
+                settings = deploy._load_settings(settings_path)
                 hooks_changed = False
                 for event, matchers in list(settings.get("hooks", {}).items()):
                     new_matchers = []
