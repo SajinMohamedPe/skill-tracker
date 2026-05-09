@@ -129,17 +129,22 @@ skill-tracker list
 
 Shows a table of all tracked skills, their pinned commit, when they were last locked, and which projects they are deployed to.
 
-### Schedule daily background checks (macOS)
+### Schedule daily background checks
 
 ```bash
 skill-tracker schedule
+skill-tracker schedule --time 08:30   # custom time (default: 09:00)
+skill-tracker schedule --uninstall    # remove the job
 ```
 
-Installs a launchd job that runs `skill-tracker check` every day at 09:00 and sends a macOS notification if any skill has updates or security alerts. Logs are written to `logs/check.log`.
+Installs a background job that runs `skill-tracker check` every day at the specified time and sends a notification if any skill has updates or security alerts. Logs are written to `logs/check.log`.
 
-```bash
-skill-tracker schedule --uninstall   # remove the job
-```
+| Platform | Mechanism |
+|----------|-----------|
+| macOS | launchd user agent (`~/Library/LaunchAgents/`) |
+| Linux | systemd user timer (`~/.config/systemd/user/`) |
+
+On Linux, ensure your user session has a running systemd instance (`loginctl enable-linger $USER` if needed).
 
 ## Project structure
 
