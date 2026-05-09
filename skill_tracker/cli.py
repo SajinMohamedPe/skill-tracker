@@ -443,11 +443,14 @@ def cmd_schedule(args: argparse.Namespace, root: Path) -> None:
         err.print("[red]Error:[/red] --time must be HH:MM (e.g. 09:00)")
         sys.exit(1)
 
-    plist = schedule.install(executable, root / "logs", hour=hour, minute=minute)
+    try:
+        job_file = schedule.install(executable, root / "logs", hour=hour, minute=minute)
+    except NotImplementedError as e:
+        err.print(f"[red]Error:[/red] {e}")
+        sys.exit(1)
     out.print(f"[green]✓ Scheduled job installed[/green] (daily at {hour:02d}:{minute:02d})")
-    out.print(f"  Plist: {plist}")
-    out.print(f"  Log:   {root / 'logs' / 'check.log'}")
-    out.print(f"\n  To run now: launchctl start com.skill-tracker.check")
+    out.print(f"  Job file: {job_file}")
+    out.print(f"  Log:      {root / 'logs' / 'check.log'}")
 
 
 # ---------------------------------------------------------------------------
