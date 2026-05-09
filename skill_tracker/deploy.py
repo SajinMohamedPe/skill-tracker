@@ -12,6 +12,11 @@ def deploy(skill: Skill, upstream_dir: Path, target: Path) -> list[tuple[str, Pa
     deployed = []
     for skill_file in skill.files:
         src = upstream_dir / skill.name / skill_file.remote
+        if src.is_symlink():
+            raise ValueError(
+                f"Refusing to deploy '{skill_file.remote}': source is a symlink. "
+                "This may indicate a compromised upstream repository."
+            )
         if not src.exists():
             raise FileNotFoundError(
                 f"Source not found: {src}\nRun 'skill-tracker check' to verify upstream state."
