@@ -121,14 +121,16 @@ def cmd_check(args: argparse.Namespace, root: Path) -> None:
 
     for skill in skills:
         upstream = upstream_dir / skill.name
+        sname = sanitise.sanitise_text(skill.name)
+        srepo = sanitise.sanitise_text(skill.repo)
 
         if not (upstream / ".git").exists():
-            out.print(f"  [yellow]⚠ {skill.name}[/yellow]: upstream missing — re-add with 'skill-tracker add'")
+            out.print(f"  [yellow]⚠ {sname}[/yellow]: upstream missing — re-add with 'skill-tracker add'")
             updates_found = True
             continue
 
         if not git.fetch(upstream, skill.branch):
-            out.print(f"  [red]✖ {skill.name}[/red] ({skill.repo}): FETCH FAILED")
+            out.print(f"  [red]✖ {sname}[/red] ({srepo}): FETCH FAILED")
             out.print(f"    [red]Repo may be deleted, renamed, or made private.[/red]")
             out.print(f"    Local copy intact — do not remove until you confirm the reason.")
             notify("Skill Tracker", f"{skill.name}: upstream repo unreachable")
@@ -139,7 +141,7 @@ def cmd_check(args: argparse.Namespace, root: Path) -> None:
         remote_sha = git.get_fetch_head_sha(upstream)
 
         if local_sha == remote_sha:
-            out.print(f"  [green]✓ {skill.name}[/green]: up to date")
+            out.print(f"  [green]✓ {sname}[/green]: up to date")
             continue
 
         deleted = [f.remote for f in skill.files if not git.file_exists_at_ref(upstream, "FETCH_HEAD", f.remote)]
@@ -150,25 +152,25 @@ def cmd_check(args: argparse.Namespace, root: Path) -> None:
 
         if deleted:
             updates_found = True
-            out.print(f"  [red bold]✖ {skill.name}[/red bold]: TRACKED FILE(S) DELETED OR MOVED UPSTREAM")
+            out.print(f"  [red bold]✖ {sname}[/red bold]: TRACKED FILE(S) DELETED OR MOVED UPSTREAM")
             for d in deleted:
-                out.print(f"    [red]• {d}[/red]")
+                out.print(f"    [red]• {sanitise.sanitise_text(d)}[/red]")
             out.print(f"    [yellow]Security: review upstream before updating. Local copy is intact.[/yellow]")
             notify("Skill Tracker — SECURITY", f"{skill.name}: tracked file deleted upstream")
 
         if changed:
             updates_found = True
             commits = git.get_new_commits(upstream, "HEAD", "FETCH_HEAD")
-            out.print(f"  [yellow]⬆ {skill.name}[/yellow]: update available ({len(commits)} commit(s))")
+            out.print(f"  [yellow]⬆ {sname}[/yellow]: update available ({len(commits)} commit(s))")
             for c in commits:
                 safe = sanitise.sanitise_commit(c)
                 out.print(f"    {c.sha[:8]}  {safe.author} — {safe.message}")
-            out.print(f"    Changed: {', '.join(changed)}")
-            out.print(f"    Run: [bold]skill-tracker update {skill.name}[/bold]")
+            out.print(f"    Changed: {', '.join(sanitise.sanitise_text(f) for f in changed)}")
+            out.print(f"    Run: [bold]skill-tracker update {sname}[/bold]")
             notify("Skill Tracker", f"{skill.name} has updates available")
 
         if not changed and not deleted:
-            out.print(f"  [green]✓ {skill.name}[/green]: up to date (upstream has unrelated commits)")
+            out.print(f"  [green]✓ {sname}[/green]: up to date (upstream has unrelated commits)")
 
     out.print()
     if not updates_found:
@@ -195,20 +197,22 @@ def cmd_update(args: argparse.Namespace, root: Path) -> None:
     local_sha = git.get_head_commit(upstream).sha
     remote_sha = git.get_fetch_head_sha(upstream)
 
+    sname = sanitise.sanitise_text(skill.name)
+
     if local_sha == remote_sha:
-        out.print(f"[green]✓ {skill.name}[/green] is already up to date.")
+        out.print(f"[green]✓ {sname}[/green] is already up to date.")
         return
 
     deleted = [f.remote for f in skill.files if not git.file_exists_at_ref(upstream, "FETCH_HEAD", f.remote)]
     if deleted:
         err.print(f"[red bold]Aborting:[/red bold] tracked file(s) deleted upstream:")
         for d in deleted:
-            err.print(f"  • {d}")
+            err.print(f"  • {sanitise.sanitise_text(d)}")
         err.print("[yellow]Review upstream changes manually before updating.[/yellow]")
         sys.exit(1)
 
     commits = git.get_new_commits(upstream, "HEAD", "FETCH_HEAD")
-    out.print(f"[bold]Incoming commits for {skill.name}:[/bold]")
+    out.print(f"[bold]Incoming commits for {sname}:[/bold]")
     for c in commits:
         safe = sanitise.sanitise_commit(c)
         out.print(f"  {c.sha[:8]}  {safe.author}  {c.date[:10]}  {safe.message}")
@@ -220,7 +224,7 @@ def cmd_update(args: argparse.Namespace, root: Path) -> None:
         if diff.strip():
             has_diff = True
             safe_diff, is_prompt_file = sanitise.sanitise_diff(diff, f.remote)
-            out.print(f"[bold]--- {f.remote} ---[/bold]")
+            out.print(f"[bold]--- {sanitise.sanitise_text(f.remote)} ---[/bold]")
             if is_prompt_file:
                 out.print("[yellow]⚠ This file is a prompt/skill — review carefully before applying.[/yellow]")
             out.print(safe_diff)
@@ -252,7 +256,7 @@ def cmd_update(args: argparse.Namespace, root: Path) -> None:
         ),
     )
 
-    out.print(f"\n[green]✓ {skill.name} updated to {commit.sha[:12]}[/green]")
+    out.print(f"\n[green]✓ {sname} updated to {commit.sha[:12]}[/green]")
 
     if skill.deployed_to:
         out.print("\nRe-deploying to registered targets:")
@@ -280,15 +284,15 @@ def cmd_deploy(args: argparse.Namespace, root: Path) -> None:
         err.print(f"[red]Error:[/red] target project '{target}' does not exist.")
         sys.exit(1)
 
-    out.print(f"[bold]Deploying {skill.name} → {target}[/bold]")
+    out.print(f"[bold]Deploying {sanitise.sanitise_text(skill.name)} → {target}[/bold]")
     try:
         deployed = deploy.deploy(skill, root / "upstream", target)
-    except FileNotFoundError as e:
+    except (FileNotFoundError, ValueError) as e:
         err.print(f"[red]Error:[/red] {e}")
         sys.exit(1)
 
     for remote, dest in deployed:
-        out.print(f"  [green]✓[/green] {remote} → {dest}")
+        out.print(f"  [green]✓[/green] {sanitise.sanitise_text(remote)} → {dest}")
 
     wired = deploy.wire_hooks(skill, target)
     for cmd in wired:
