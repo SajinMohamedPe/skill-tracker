@@ -22,6 +22,10 @@ def deploy(skill: Skill, upstream_dir: Path, target: Path) -> list[tuple[str, Pa
                 f"Source not found: {src}\nRun 'skill-tracker check' to verify upstream state."
             )
         dest = _dest_path(skill_file, target)
+        if not dest.resolve().is_relative_to((target / ".claude").resolve()):
+            raise ValueError(
+                f"Unsafe path detected: '{skill_file.remote}' resolves outside .claude/ — aborting."
+            )
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src, dest)
         if skill_file.type in ("script", "hook"):
@@ -94,10 +98,4 @@ def _dest_path(skill_file: SkillFile, target: Path) -> Path:
         case _:
             dest = target / ".claude" / filename
 
-    resolved = dest.resolve()
-    allowed = (target / ".claude").resolve()
-    if not resolved.is_relative_to(allowed):
-        raise ValueError(
-            f"Unsafe path detected: '{skill_file.remote}' resolves outside .claude/ — aborting."
-        )
     return dest

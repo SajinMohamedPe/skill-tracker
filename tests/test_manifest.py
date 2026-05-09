@@ -1,7 +1,7 @@
 import json
 import pytest
 from pathlib import Path
-from skill_tracker.manifest import Manifest, LockFile, Skill, SkillFile, LockEntry
+from skill_tracker.manifest import Manifest, LockFile, Skill, SkillFile, LockEntry, HookDeclaration
 
 
 @pytest.fixture
@@ -74,6 +74,54 @@ class TestManifest:
         tmp_manifest.register_deployment("caveman", "/some/project")
         assert tmp_manifest.get("caveman").deployed_to.count("/some/project") == 1
 
+    def test_remove_deletes_skill(self, tmp_manifest, sample_skill):
+        tmp_manifest.add(sample_skill)
+        tmp_manifest.remove("caveman")
+        assert tmp_manifest.get("caveman") is None
+
+    def test_remove_unknown_raises(self, tmp_manifest):
+        with pytest.raises(KeyError):
+            tmp_manifest.remove("ghost")
+
+    def test_remove_persists_to_disk(self, tmp_path, sample_skill):
+        path = tmp_path / "skills-manifest.json"
+        m1 = Manifest(path)
+        m1.add(sample_skill)
+        m1.remove("caveman")
+        m2 = Manifest(path)
+        assert m2.get("caveman") is None
+
+    def test_hooks_round_trip(self, tmp_path, sample_skill):
+        sample_skill.hooks = [
+            HookDeclaration(event="PreToolUse", matcher="Bash", command="block.sh")
+        ]
+        path = tmp_path / "skills-manifest.json"
+        m1 = Manifest(path)
+        m1.add(sample_skill)
+        m2 = Manifest(path)
+        hooks = m2.get("caveman").hooks
+        assert len(hooks) == 1
+        assert hooks[0].event == "PreToolUse"
+        assert hooks[0].matcher == "Bash"
+        assert hooks[0].command == "block.sh"
+
+    def test_skill_without_hooks_loads_empty(self, tmp_path, sample_skill):
+        path = tmp_path / "skills-manifest.json"
+        m1 = Manifest(path)
+        m1.add(sample_skill)
+        # Manually strip hooks key to simulate old manifest format
+        data = json.loads(path.read_text())
+        for s in data["skills"]:
+            s.pop("hooks", None)
+        path.write_text(json.dumps(data))
+        m2 = Manifest(path)
+        assert m2.get("caveman").hooks == []
+
+    def test_manifest_file_permissions(self, tmp_manifest, sample_skill):
+        tmp_manifest.add(sample_skill)
+        mode = tmp_manifest.path.stat().st_mode & 0o777
+        assert mode == 0o600
+
 
 class TestLockFile:
     def test_empty_on_init(self, tmp_lockfile):
@@ -100,3 +148,26 @@ class TestLockFile:
 
         lf2 = LockFile(path)
         assert lf2.get("s").commit == "sha1"
+
+    def test_remove_deletes_entry(self, tmp_lockfile):
+        tmp_lockfile.update("s", LockEntry("r", "sha1", "Bob", "2026-01-01", "2026-05-09"))
+        tmp_lockfile.remove("s")
+        assert tmp_lockfile.get("s") is None
+
+    def test_remove_nonexistent_is_silent(self, tmp_lockfile):
+        tmp_lockfile.remove("ghost")  # should not raise
+
+    def test_remove_persists_to_disk(self, tmp_path):
+        path = tmp_path / "skills.lock"
+        lf1 = LockFile(path)
+        lf1.update("s", LockEntry("r", "sha1", "Bob", "2026-01-01", "2026-05-09"))
+        lf1.remove("s")
+        lf2 = LockFile(path)
+        assert lf2.get("s") is None
+
+    def test_lockfile_permissions(self, tmp_path):
+        path = tmp_path / "skills.lock"
+        lf = LockFile(path)
+        lf.update("s", LockEntry("r", "sha1", "Bob", "2026-01-01", "2026-05-09"))
+        mode = path.stat().st_mode & 0o777
+        assert mode == 0o600
