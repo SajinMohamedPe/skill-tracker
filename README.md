@@ -192,7 +192,7 @@ All untrusted content from upstream passes through `sanitise.py` before being di
 
 Three layers of protection:
 
-**Rich markup escaping** — all upstream text has `[` escaped to `\[` before being passed to the terminal renderer, preventing console injection via crafted markup.
+**Rich markup escaping** — all upstream text has `[` escaped to `\[` before being passed to the terminal renderer, preventing console injection via crafted markup. This applies to commit messages, author names, file paths, and skill metadata from the manifest.
 
 **Injection pattern detection** — commit messages and author names are scanned against patterns like `ignore previous instructions`, `you are now`, `SYSTEM:`, `<system>`, `[INST]`, and similar. Matching content is replaced with a visible redaction warning rather than silently dropped.
 
@@ -201,3 +201,17 @@ Three layers of protection:
 **Prompt file warning** — when a diff touches a `.md` file (which is itself a prompt — `SKILL.md`, `AGENT.md`), a warning is shown before the diff so you know you are reviewing a change to instructions that Claude will follow.
 
 The test suite in `tests/test_sanitise.py` covers all patterns and edge cases.
+
+### Deploy-time safety
+
+**Symlink rejection** — before copying any upstream file, skill-tracker checks whether it is a symlink. A compromised upstream repository could plant a symlink pointing to a sensitive system file to exfiltrate its contents into your project. Any symlink found during deploy raises an error and aborts immediately.
+
+**Path traversal prevention** — all destination paths are resolved and verified to remain inside the target project's `.claude/` directory before any file is written. A crafted remote path like `../../.bashrc` is rejected outright.
+
+### Notification safety
+
+macOS notifications triggered by skill-tracker (update available, security alerts) use `shlex.quote()` to escape skill names and messages before passing them to `osascript`, preventing an upstream-controlled commit message from injecting arbitrary AppleScript.
+
+### Schedule file safety
+
+The macOS launchd plist is generated using `xml.etree.ElementTree` rather than string interpolation, ensuring that special characters in the executable path (`&`, `<`, `>`) cannot break the XML structure or inject malicious plist entries.
