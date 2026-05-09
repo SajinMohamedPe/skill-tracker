@@ -55,14 +55,22 @@ def _dest_path(skill_file: SkillFile, target: Path) -> Path:
         case "skill":
             # Preserve the skill's subdirectory name (e.g. skills/caveman/SKILL.md → .claude/skills/caveman/)
             skill_subdir = remote.parent.name
-            return target / ".claude" / "skills" / skill_subdir / filename
+            dest = target / ".claude" / "skills" / skill_subdir / filename
         case "command":
-            return target / ".claude" / "commands" / filename
+            dest = target / ".claude" / "commands" / filename
         case "script":
-            return target / ".claude" / "scripts" / filename
+            dest = target / ".claude" / "scripts" / filename
         case "hook":
-            return target / ".claude" / "hooks" / filename
+            dest = target / ".claude" / "hooks" / filename
         case "agent":
-            return target / ".claude" / "agents" / filename
+            dest = target / ".claude" / "agents" / filename
         case _:
-            return target / ".claude" / filename
+            dest = target / ".claude" / filename
+
+    resolved = dest.resolve()
+    allowed = (target / ".claude").resolve()
+    if not resolved.is_relative_to(allowed):
+        raise ValueError(
+            f"Unsafe path detected: '{skill_file.remote}' resolves outside .claude/ — aborting."
+        )
+    return dest
