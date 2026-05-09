@@ -18,7 +18,7 @@ skill-tracker solves this with:
 Requires Python 3.10+ and `git`.
 
 ```bash
-git clone https://github.com/your-username/skill-tracker
+git clone https://github.com/SajinMohamedPe/skill-tracker
 cd skill-tracker
 pip install -e .
 ```
