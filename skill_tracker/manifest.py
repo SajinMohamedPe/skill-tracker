@@ -74,6 +74,7 @@ class Manifest:
             ]
         }
         self.path.write_text(json.dumps(data, indent=2) + "\n")
+        self.path.chmod(0o600)
 
     # Returns the Skill with the given name, or None if it doesn't exist in the manifest
     def get(self, name: str) -> Skill | None:
@@ -118,6 +119,7 @@ class LockFile:
 
     def save(self) -> None:
         self.path.write_text(json.dumps(self._data, indent=2) + "\n")
+        self.path.chmod(0o600)
 
     def update(self, name: str, entry: LockEntry) -> None:
         self._data[name] = {
