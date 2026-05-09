@@ -43,7 +43,7 @@ These two files are gitignored — they stay private so no one can infer which s
 skill-tracker locates your manifest by walking up from your current directory. To use it from anywhere without needing to `cd` into the project first, add this to your `~/.zshrc`:
 
 ```bash
-export SKILL_TRACKER_HOME=>/path/to/skill-tracker
+export SKILL_TRACKER_HOME=/path/to/skill-tracker
 ```
 
 Then reload your shell:
