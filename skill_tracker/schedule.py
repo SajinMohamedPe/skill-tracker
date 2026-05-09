@@ -17,8 +17,8 @@ def _plist_integer(parent: Element, key: str, value: int) -> None:
     SubElement(parent, "integer").text = str(value)
 
 
-def install(executable: str, log_dir: Path) -> Path:
-    """Install a launchd job to run 'skill-tracker check' daily at 09:00."""
+def install(executable: str, log_dir: Path, hour: int = 9, minute: int = 0) -> Path:
+    """Install a launchd job to run 'skill-tracker check' daily at the given time (default 09:00)."""
     plist_path = Path.home() / "Library" / "LaunchAgents" / f"{_LABEL}.plist"
     log_dir.mkdir(parents=True, exist_ok=True)
 
@@ -34,8 +34,8 @@ def install(executable: str, log_dir: Path) -> Path:
 
     SubElement(d, "key").text = "StartCalendarInterval"
     interval = SubElement(d, "dict")
-    _plist_integer(interval, "Hour", 9)
-    _plist_integer(interval, "Minute", 0)
+    _plist_integer(interval, "Hour", hour)
+    _plist_integer(interval, "Minute", minute)
 
     _plist_string(d, "StandardOutPath", str(log_dir / "check.log"))
     _plist_string(d, "StandardErrorPath", str(log_dir / "check-error.log"))

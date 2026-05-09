@@ -435,8 +435,16 @@ def cmd_schedule(args: argparse.Namespace, root: Path) -> None:
         err.print("[red]Error:[/red] 'skill-tracker' not found in PATH. Install with 'pip install -e .' first.")
         sys.exit(1)
 
-    plist = schedule.install(executable, root / "logs")
-    out.print(f"[green]✓ Scheduled job installed[/green] (daily at 09:00)")
+    try:
+        hour, minute = (int(p) for p in args.time.split(":"))
+        if not (0 <= hour <= 23 and 0 <= minute <= 59):
+            raise ValueError
+    except ValueError:
+        err.print("[red]Error:[/red] --time must be HH:MM (e.g. 09:00)")
+        sys.exit(1)
+
+    plist = schedule.install(executable, root / "logs", hour=hour, minute=minute)
+    out.print(f"[green]✓ Scheduled job installed[/green] (daily at {hour:02d}:{minute:02d})")
     out.print(f"  Plist: {plist}")
     out.print(f"  Log:   {root / 'logs' / 'check.log'}")
     out.print(f"\n  To run now: launchctl start com.skill-tracker.check")
@@ -477,6 +485,7 @@ def main() -> None:
 
     p_sched = sub.add_parser("schedule", help="Install the daily background check (macOS launchd)")
     p_sched.add_argument("--uninstall", action="store_true", help="Remove the scheduled job")
+    p_sched.add_argument("--time", default="09:00", metavar="HH:MM", help="Time to run daily check (default: 09:00)")
 
     args = parser.parse_args()
     root = get_root()
