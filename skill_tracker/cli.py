@@ -305,7 +305,6 @@ def cmd_deploy(args: argparse.Namespace, root: Path) -> None:
 def _remove_deployed_files(skill, root: Path) -> None:
     """Delete deployed skill files and clean up settings.json hooks from each target project."""
     import json as _json
-    import shutil as _shutil
 
     script_names = {Path(f.remote).name for f in skill.files if f.type in ("script", "hook")}
 
