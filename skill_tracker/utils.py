@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import shlex
 import subprocess
 from pathlib import Path
 
@@ -48,10 +49,9 @@ def get_root() -> Path:
 def notify(title: str, message: str) -> None:
     """Send a macOS notification. Silently does nothing on other platforms."""
     try:
-        subprocess.run(
-            ["osascript", "-e", f'display notification "{message}" with title "{title}"'],
-            capture_output=True,
-            timeout=5,
-        )
+        safe_msg = shlex.quote(message)
+        safe_title = shlex.quote(title)
+        script = f"display notification {safe_msg} with title {safe_title}"
+        subprocess.run(["osascript", "-e", script], capture_output=True, timeout=5)
     except Exception:
         pass
