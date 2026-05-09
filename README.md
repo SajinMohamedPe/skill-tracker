@@ -182,7 +182,7 @@ Open Claude Code in this project directory and the skill-tracker skill is availa
 pytest
 ```
 
-56 tests covering manifest read/write, file routing, URL parsing, type inference, and prompt injection sanitisation.
+76 tests covering manifest read/write, hook declarations, file routing, URL parsing, type inference, prompt injection sanitisation, settings.json validation, symlink rejection, and path traversal protection.
 
 ## Security model
 
