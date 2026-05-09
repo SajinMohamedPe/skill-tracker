@@ -1,0 +1,7 @@
+description = "Deploy a tracked skill to a Claude Code project"
+prompt = """Deploy skill to project: {{args}}
+
+Parse args as: <skill-name> <project-path>. Resolve to an absolute path if relative.
+Run: skill-tracker deploy <name> <absolute-project-path>
+Report which files were deployed and where they landed.
+Remind the user to restart Claude Code in the target project for the skill to be picked up."""

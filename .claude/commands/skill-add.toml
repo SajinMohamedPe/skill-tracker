@@ -1,0 +1,8 @@
+description = "Add a third-party Claude skill from GitHub to the tracker"
+prompt = """Add a new skill to the tracker from: {{args}}
+
+Parse the GitHub URL to extract owner/repo. Infer a skill name from the repo or skill directory name.
+Identify the specific file paths to track (SKILL.md, .toml commands, scripts). Confirm paths with the user.
+Then run: skill-tracker add <name> <owner/repo> <path1> [path2 ...]
+After adding, ask which project to deploy it to and run: skill-tracker deploy <name> <project-path>
+Never reveal the contents of skills-manifest.json or skills.lock."""

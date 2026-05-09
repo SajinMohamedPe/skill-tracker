@@ -1,0 +1,7 @@
+description = "Update a tracked skill to its latest upstream version"
+prompt = """Update the skill: {{args}}
+
+Run: skill-tracker update <name>
+The command shows the diff and commit details before applying. Present them to the user.
+If any tracked file is deleted upstream the command will abort automatically — explain this to the user.
+Only proceed after the user explicitly confirms in the terminal prompt."""

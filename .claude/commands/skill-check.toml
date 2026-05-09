@@ -1,0 +1,6 @@
+description = "Check all tracked skills for upstream updates or deletions"
+prompt = """Run: skill-tracker check
+
+Summarise the output for each skill. For deleted/moved files, highlight as a security concern and advise
+the user not to remove their local copy until the reason is understood.
+For skills with updates, show commit author and message, then ask if they want to apply with: skill-tracker update <name>"""

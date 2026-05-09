@@ -1,0 +1,13 @@
+skills-manifest.json
+skills.lock
+upstream/
+logs/*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+.pytest_cache/
